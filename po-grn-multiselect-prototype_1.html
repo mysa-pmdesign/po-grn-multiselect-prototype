@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PO/GRN multi-select prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f6f2;--surface:#ffffff;--surface2:#f1efe9;--text:#1d1c1a;--muted:#6a6862;--border:#e2dfd7;--border-strong:#b9b5aa;
+  --accent:#27695a;--on-accent:#ffffff;--accent-tint:#e1efe9;
+  --warn-bg:#fbf2d9;--warn-border:#e4d08a;--warn-text:#6a480a;
+  --danger:#b3261e;--overlay:rgba(20,19,17,.5);--shadow:0 16px 48px rgba(0,0,0,.2);
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#151412;--surface:#1f1e1b;--surface2:#2a2825;--text:#f0eee8;--muted:#a9a69d;--border:#3a3834;--border-strong:#68645b;
+    --accent:#4db79a;--on-accent:#0c1f19;--accent-tint:#1d3a31;
+    --warn-bg:#3a3115;--warn-border:#6e5a22;--warn-text:#f0d88c;
+    --danger:#f2b8b5;--overlay:rgba(0,0,0,.62);--shadow:0 16px 48px rgba(0,0,0,.5);color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151412;--surface:#1f1e1b;--surface2:#2a2825;--text:#f0eee8;--muted:#a9a69d;--border:#3a3834;--border-strong:#68645b;
+  --accent:#4db79a;--on-accent:#0c1f19;--accent-tint:#1d3a31;
+  --warn-bg:#3a3115;--warn-border:#6e5a22;--warn-text:#f0d88c;
+  --danger:#f2b8b5;--overlay:rgba(0,0,0,.62);--shadow:0 16px 48px rgba(0,0,0,.5);color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface)}
+.ttl{font-weight:600;font-size:15px}
+.seg{display:inline-flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 14px;text-align:left;line-height:1.25}
+.seg button b{display:block;font-weight:600}
+.seg button span{display:block;font-size:12px;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--surface);border-color:var(--border)}
+.top .grow{flex:1}
+.desc{max-width:1180px;margin:14px auto 0;padding:0 24px;color:var(--muted)}
+.layout{max-width:1180px;margin:0 auto;padding:16px 24px 40px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;font-weight:600}
+.card .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.grid2{grid-template-columns:1fr}}
+.f>span{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.v,.f input,.f select{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-height:38px;background:var(--surface);color:var(--text);font:inherit}
+.v{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.v.empty{color:var(--muted)}
+.v.ro{background:var(--surface2)}
+.x{border:0;background:transparent;padding:4px;border-radius:6px;color:var(--muted);display:inline-flex}
+.x:hover{background:var(--surface2);color:var(--text)}
+.banner{margin-top:12px;background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);border-radius:8px;padding:10px 12px}
+.banner .brow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.banner .brow2{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding-top:8px;border-top:1px solid var(--warn-border);flex-wrap:wrap}
+.banner label{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.banner input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.banner.flagrow{display:flex;align-items:center;gap:8px}
+.note-row{margin-top:12px;background:var(--surface2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.link{border:0;background:transparent;padding:0;text-decoration:underline;text-underline-offset:3px;font-weight:500;color:inherit}
+.err{color:var(--danger);font-size:13px;margin-top:8px}
+.muted{color:var(--muted);font-size:13px;margin-top:8px}
+.warn-t{color:var(--warn-text);font-size:13px;margin-top:8px}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.btn{border:1px solid var(--border-strong);background:var(--surface);border-radius:8px;padding:8px 16px;font-weight:500}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed;filter:none}
+.btn.ghost{border-color:var(--border)}
+.actions{display:flex;justify-content:flex-end;gap:10px}
+table.lines{width:100%;border-collapse:collapse}
+table.lines th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border-strong)}
+table.lines td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.lines .n{width:32px;color:var(--muted)}
+table.lines .r{text-align:right}
+.qty{display:flex;justify-content:flex-end;align-items:center;gap:6px}
+.qty input{width:84px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:var(--surface);color:var(--text);font:inherit}
+.qty input.over{background:var(--warn-bg);border-color:var(--warn-border)}
+.flag{position:relative;display:inline-flex;color:var(--warn-text);cursor:help}
+.flag::after{content:attr(data-tip);position:absolute;bottom:135%;right:-6px;background:var(--text);color:var(--surface);padding:4px 8px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
+.flag:hover::after,.flag:focus::after{opacity:1}
+.totals{margin-top:12px;margin-left:auto;max-width:300px}
+.totals div{display:flex;justify-content:space-between;padding:3px 0;color:var(--muted)}
+.totals div.t{color:var(--text);font-weight:600;border-top:1px solid var(--border);margin-top:4px;padding-top:6px}
+.side ol,.side ul{margin:10px 0 0;padding-left:18px;color:var(--text)}
+.side li{margin-bottom:8px}
+.side .card h2{font-size:15px}
+.side small{color:var(--muted)}
+.landing{max-width:1000px;margin:0 auto;padding:40px 24px}
+.landing h1{font-size:26px;font-weight:600;letter-spacing:-.01em}
+.landing p{margin-top:8px;color:var(--muted);max-width:60ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}
+.mcard{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.mcard:hover{border-color:var(--accent)}
+.mcard b{font-size:16px}
+.mcard .erp{font-weight:500}
+.mcard .how,.mcard .pick{color:var(--muted);font-size:13px}
+.ov{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal{width:min(740px,100%);max-height:90vh;display:flex;flex-direction:column;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px}
+.modal.sm{width:min(520px,100%)}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mh h3{font-size:18px;font-weight:600}
+.mh .tt{display:flex;align-items:center;gap:10px}
+.sub{color:var(--muted);margin-top:4px}
+.vb{margin-top:6px;font-size:13px;color:var(--muted)}
+.vb b{color:var(--text);font-weight:500}
+.vb span+span{margin-left:16px}
+.vb.mix b{color:var(--warn-text)}
+.bar{margin-top:12px;background:var(--surface2);border-radius:6px;padding:7px 12px;color:var(--muted);font-size:13px}
+.mscroll{overflow:auto;margin-top:14px;flex:1;min-height:0}
+.tbl{border:1px solid var(--border);border-radius:8px;overflow:hidden;min-width:560px}
+.tr{display:grid;grid-template-columns:var(--cols);gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--border)}
+.tr.th{background:var(--surface2);border-top:0;font-size:12px;color:var(--muted);padding-top:8px;padding-bottom:8px}
+.tr[data-act="tick"]{cursor:pointer}
+.tr[data-act="tick"]:hover{background:var(--surface2)}
+.tr[aria-checked="true"]{background:var(--accent-tint)}
+.tr b{font-weight:500;display:block}
+.tr small{display:block;color:var(--muted);font-size:12px}
+.tr .r{text-align:right}
+.sortbtn{border:0;background:transparent;padding:0;font:inherit;color:inherit;display:inline-flex;align-items:center;gap:4px}
+.sortbtn.on{color:var(--text)}
+.cb{width:18px;height:18px;border:1.5px solid var(--border-strong);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface);color:var(--accent)}
+.cb.on{border-color:var(--accent);background:var(--accent-tint)}
+.cb.mixed{border-color:var(--accent);background:var(--accent-tint)}
+button.cb{padding:0}
+.pill{background:var(--surface2);padding:2px 10px;border-radius:6px;font-size:12px;white-space:nowrap}
+.tr[aria-checked="true"] .pill{background:var(--surface)}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.mf{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.mf .btns{display:flex;gap:10px}
+.cmp{width:100%;border-collapse:collapse;margin-top:14px}
+.cmp th{font-size:13px;font-weight:600;text-align:right;padding:8px 0 8px 8px;border-bottom:1px solid var(--border-strong)}
+.cmp th:first-child{text-align:left}
+.cmp td{padding:11px 0 11px 8px;text-align:right;border-bottom:1px solid var(--border)}
+.cmp td:first-child{text-align:left;color:var(--muted)}
+.cmp tr:last-child td{font-weight:600;color:var(--text);border-bottom:0}
+.cmp tr:last-child td:first-child{color:var(--text)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--surface);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:40;max-width:90vw}
+#toast.show{opacity:1}
+.skel{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+var fmt=function(n){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function dl(d){return String(d).padStart(2,'0')+' Aug';}
+var I={
+  x:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l10 10M14 4L4 14"/></svg>',
+  back:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10H4M9 5l-5 5 5 5"/></svg>',
+  check:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.6 2.6L10 3.5"/></svg>',
+  dash:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 6h7"/></svg>',
+  up:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V2M2.5 5.5L6 2l3.5 3.5"/></svg>',
+  down:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v8M2.5 6.5L6 10l3.5-3.5"/></svg>',
+  sort:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v8M1.5 4.5L4 2l2.5 2.5M8 10V2M5.5 7.5L8 10l2.5-2.5"/></svg>',
+  flag:'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 14V2.5"/><path d="M3.5 3h8.2l-1.7 2.7 1.7 2.8H3.5"/></svg>',
+  warn:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8v3.6M8 10.9v.1"/></svg>'
+};
+
+/* ---------- sample data ---------- */
+var ITEMS=[{n:'Coconut',r:40,g:5},{n:'Jaggery',r:90,g:5},{n:'Sugar',r:45,g:5},{n:'Cashew',r:650,g:5},{n:'Ghee',r:520,g:12},{n:'Rice',r:58,g:5}];
+var BR=['Pune','Mumbai','Bangalore'];
+var RICH='Richgold Coconuts', SAI='Sai Dairy Products', FRESH='Fresh Farms Produce';
+function mkLine(it,total,billed){return {n:it.n,r:it.r,g:it.g,total:total,billed:billed};}
+var POS=[];
+for(var i=0;i<31;i++){
+  var a=ITEMS[i%6], b=ITEMS[(i+2)%6];
+  var po={id:'PO-'+(3001+i),vendor:RICH,branch:BR[i%3],d:1+i,dateLabel:dl(1+i),
+    lines:[mkLine(a,40+(i%5)*20,(i%4===1)?20:0),mkLine(b,20+(i%3)*10,0)],grns:[]};
+  var cnt=1+(i%3);
+  for(var k=0;k<cnt;k++){
+    var base=po.lines[k%2];
+    var received=Math.max(10,Math.round(base.total/cnt/10)*10);
+    var billed=(k===0&&base.billed>0)?Math.max(0,Math.min(base.billed,received-10)):0;
+    po.grns.push({id:'GRN-'+(2100+i*3+k),po:po.id,vendor:RICH,branch:po.branch,d:po.d+1+k,dateLabel:dl(po.d+1+k),
+      lines:[mkLine(base,received,billed)]});
+  }
+  POS.push(po);
+}
+POS.push({id:'PO-4101',vendor:SAI,branch:'Mumbai',d:20,dateLabel:dl(20),lines:[mkLine(ITEMS[4],30,0)],grns:[
+  {id:'GRN-2301',po:'PO-4101',vendor:SAI,branch:'Mumbai',d:21,dateLabel:dl(21),lines:[mkLine(ITEMS[4],20,0)]},
+  {id:'GRN-2302',po:'PO-4101',vendor:SAI,branch:'Mumbai',d:22,dateLabel:dl(22),lines:[mkLine(ITEMS[4],10,0)]}]});
+var VEN3=[RICH,'Jalaram Enterprises',FRESH,SAI], BR3=['Warehouse','Koregaon Park','Baner'];
+var GRN3=[];
+for(var j=0;j<28;j++){
+  var it=ITEMS[j%6];
+  GRN3.push({id:'GRN-'+(2170+j),vendor:VEN3[j%4],branch:BR3[j%3],d:15,dateLabel:'15 Sep',lines:[mkLine(it,30+(j%4)*10,j%5===0?10:0)]});
+}
+function byOld(x,y){return x.d-y.d||x.id.localeCompare(y.id,undefined,{numeric:true});}
+POS.sort(byOld);
+var rem=function(l){return l.total-l.billed;};
+var availAmt=function(r){return r.lines.reduce(function(s,l){return s+rem(l)*l.r*(1+l.g/100);},0);};
+var totalAmt=function(r){return r.lines.reduce(function(s,l){return s+l.total*l.r*(1+l.g/100);},0);};
+var status=function(r){return r.lines.some(function(l){return l.billed>0;})?'Partially billed':'Unbilled';};
+function totals(lines){var s=0,g=0;lines.forEach(function(l){var a=l.qty*l.r;s+=a;g+=a*l.g/100;});return {sub:s,gst:g,total:s+g};}
+var SCAN_LINES=[{n:'Coconut',qty:150,r:40,g:5},{n:'Jaggery',qty:60,r:90,g:5},{n:'Sugar',qty:90,r:45,g:5}];
+var SCAN=totals(SCAN_LINES);
+
+var MODELS={
+  1:{sub:'PO only',erp:'ERPs with POs, no GRN (Zoho Books, Odoo, ERPNext)',how:'POs fetch on load and on vendor change.',pick:'Tick POs.',
+     desc:'Model 1: POs fetch on their own. Tick POs and each PO supplies its lines.'},
+  2:{sub:'PO + GRN',erp:'ERPs with POs and GRNs (Zoho Books)',how:'POs fetch on load and on vendor change.',pick:'Tick POs, then GRNs across them.',
+     desc:'Model 2: POs fetch on their own. Tick POs, then GRNs across them. Each GRN supplies its lines.'},
+  3:{sub:'GRN only',erp:'Logic ERP, Petpooja',how:'Enter a GRN code or a delivery date.',pick:'Tick GRNs.',
+     desc:'Model 3: enter one GRN code, or a delivery date for a list. Tick GRNs.'},
+  4:{sub:'PO, then GRN',erp:'Rista',how:'Enter a PO code or a PO date.',pick:'Tick POs, then GRNs.',
+     desc:'Model 4: enter one PO code, or a PO date for a list. Tick POs, then GRNs.'}
+};
+var TRY={
+  1:['Click <b>Select &amp; Apply</b>. Sort by Branch and tick PO-3001 and PO-3002. They are in different branches, so Apply is blocked.',
+     'Tick two POs from the same branch, then <b>Apply</b> and <b>Override</b>. Both POs\' lines show as one flat list.',
+     'Raise a quantity above what remains and hover the flag.',
+     'Remove all with the cross, or change the vendor after applying.',
+     'Try vendor Sai Dairy Products (one PO, opens ticked) or Fresh Farms Produce (no match).'],
+  2:['Click <b>Select &amp; Apply</b>, tick POs from one branch, then <b>Next</b>.',
+     'In step 2, leave one PO without a GRN and see Apply stay disabled.',
+     'Sort GRNs by PO number or branch, tick, then Apply and Override.',
+     'Sai Dairy Products has one PO, which opens ticked.'],
+  3:['Type <b>GRN-2193</b> in GRN number. One match, so the popup opens ticked.',
+     'Or pick any <b>Delivery Date</b>, then Select &amp; Apply. 25 GRNs show with a note, across vendors and branches.',
+     'Try Select all, read the errors, then sort by vendor or branch and tick one vendor and branch.',
+     'Apply, Override, then edit quantities.'],
+  4:['Type <b>PO-3003</b> in PO number. One match, so the popup opens ticked.',
+     'Or pick any <b>PO date</b>, then Select &amp; Apply. 25 POs show with a note, across vendors and branches.',
+     'Select all, read the errors, then sort by vendor or branch and tick one vendor and branch.',
+     'Tick POs, then <b>Next</b> for the GRNs across them.']
+};
+var RULES=['Checkboxes with Select all. Each list shows at most 25, oldest first.',
+  'Sort by branch, by vendor (Models 3 and 4), and by PO number on GRN screens.',
+  'Mixed branches or vendors block Apply. Models 3 and 4 show the selected vendor and branch in the popup heading.',
+  'Lines are one flat list. Each pulls the remaining quantity.',
+  'A quantity above what remains is allowed and flagged.',
+  'Remove clears everything. A vendor change resets after a confirm.'];
+
+/* ---------- state ---------- */
+var S=null, gen=0;
+function fresh(m){
+  gen++;
+  S={model:m,vendor:RICH,branch:'Headquarters',loading:false,fetched:false,list:[],optOut:false,mandatoryErr:false,
+     dateVal:'',codeVal:'',codeHint:'',applied:null,lines:null,modal:null,P:null,P1:null,poSel:[],pending:null,pendingVendor:null,findErr:''};
+  render();
+  if(m===1||m===2) fetchPOs();
+}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('show');},2600);}
+
+function fetchPOs(){
+  var g=++gen; S.loading=true;S.fetched=false;render();
+  setTimeout(function(){
+    if(g!==gen)return;
+    S.list=POS.filter(function(p){return p.vendor===S.vendor;}).sort(byOld);
+    S.loading=false;S.fetched=true;render();
+    if(S.list.length===1&&!S.applied)openPicker('po');
+  },600);
+}
+function fetchByInput(){
+  var g=++gen; S.loading=true;S.fetched=false;render();
+  setTimeout(function(){
+    if(g!==gen)return;
+    var code=S.codeVal.trim().toLowerCase(),data=S.model===3?GRN3.slice():POS.slice().sort(byOld);
+    S.list=code?data.filter(function(x){return x.id.toLowerCase()===code;}):data;
+    S.loading=false;S.fetched=true;render();
+    if(S.list.length===1)openPicker(S.model===3?'grn3':'po');
+  },700);
+}
+
+/* ---------- picker ---------- */
+function openPicker(stage){
+  var rows;
+  if(stage==='po'||stage==='grn3'){rows=S.list.slice(0,25);S.pickerNote=S.list.length>25;}
+  else{var all=[];S.poSel.forEach(function(p){p.grns.forEach(function(g){all.push(g);});});all.sort(byOld);rows=all.slice(0,25);S.pickerNote=all.length>25;}
+  S.P={stage:stage,rows:rows,ticked:new Set(rows.length===1?[rows[0].id]:[]),sort:{key:null,dir:1}};
+  S.modal='picker';render();
+}
+function sortedRows(){
+  var P=S.P,rs=P.rows.slice(),k=P.sort.key;
+  if(k){var kv=function(r){return k==='branch'?r.branch:k==='vendor'?r.vendor:r.po;};rs.sort(function(a,b){return kv(a).localeCompare(kv(b),undefined,{numeric:true})*P.sort.dir||byOld(a,b);});}
+  return rs;
+}
+function validate(){
+  var P=S.P,tk=P.rows.filter(function(r){return P.ticked.has(r.id);});
+  var noun=P.stage==='po'?'POs':'GRNs',errs=[];
+  if(new Set(tk.map(function(r){return r.branch;})).size>1)errs.push('Selected '+noun+' are from different branches. Keep one branch to continue.');
+  if(new Set(tk.map(function(r){return r.vendor;})).size>1)errs.push('Selected '+noun+' are from different vendors. Keep one vendor to continue.');
+  var missing=[];
+  if(P.stage==='grn'){var have=new Set(tk.map(function(r){return r.po;}));missing=S.poSel.filter(function(p){return !have.has(p.id);}).map(function(p){return p.id;});}
+  return {tk:tk,errs:errs,missing:missing,ok:tk.length>0&&errs.length===0&&missing.length===0};
+}
+function vendorCell(r){return esc(r.vendor);}
+var COLS={
+  po4:{cols:'28px minmax(100px,1.1fr) 150px 100px 110px 120px',defs:[
+    {l:'PO NUMBER',c:function(r){return '<b>'+r.id+'</b><small>'+r.dateLabel+'</small>';}},
+    {l:'VENDOR',k:'vendor',c:vendorCell},
+    {l:'BRANCH',k:'branch',c:function(r){return r.branch;}},
+    {l:'TOTAL AMOUNT',al:'r',c:function(r){return fmt(totalAmt(r));}},
+    {l:'STATUS',c:function(r){return '<span class="pill">'+status(r)+'</span>';}}]},
+  po:{cols:'28px minmax(110px,1.3fr) 100px 120px 130px',defs:[
+    {l:'PO NUMBER',c:function(r){return '<b>'+r.id+'</b><small>'+r.dateLabel+'</small>';}},
+    {l:'BRANCH',k:'branch',c:function(r){return r.branch;}},
+    {l:'TOTAL AMOUNT',al:'r',c:function(r){return fmt(totalAmt(r));}},
+    {l:'STATUS',c:function(r){return '<span class="pill">'+status(r)+'</span>';}}]},
+  grn:{cols:'28px minmax(100px,1.2fr) 100px 100px 110px 110px',defs:[
+    {l:'GRN NUMBER',c:function(r){return '<b>'+r.id+'</b><small>'+r.dateLabel+'</small>';}},
+    {l:'PO NUMBER',k:'po',c:function(r){return r.po;}},
+    {l:'BRANCH',k:'branch',c:function(r){return r.branch;}},
+    {l:'AVAILABLE',al:'r',c:function(r){return fmt(availAmt(r));}},
+    {l:'TOTAL',al:'r',c:function(r){return fmt(totalAmt(r));}}]},
+  grn3:{cols:'28px minmax(100px,1fr) 150px 110px 105px 105px',defs:[
+    {l:'GRN NUMBER',c:function(r){return '<b>'+r.id+'</b><small>'+r.dateLabel+'</small>';}},
+    {l:'VENDOR',k:'vendor',c:vendorCell},
+    {l:'BRANCH',k:'branch',c:function(r){return r.branch;}},
+    {l:'AVAILABLE',al:'r',c:function(r){return fmt(availAmt(r));}},
+    {l:'TOTAL',al:'r',c:function(r){return fmt(totalAmt(r));}}]}
+};
+function pickerHTML(){
+  var P=S.P,rows=sortedRows(),v=validate(),cfg=(P.stage==='po'&&S.model===4)?COLS.po4:COLS[P.stage],n=P.ticked.size;
+  var ticked=rows.filter(function(r){return P.ticked.has(r.id);}).length;
+  var allOn=rows.length>0&&ticked===rows.length,mixed=ticked>0&&!allOn;
+  var title,sub='',bar='';
+  if(P.stage==='po'){title=P.rows.length+' PO\'s available for this bill';sub=S.model===1?'Select POs to link to this bill':'Select POs to see the GRN\'s linked against them';}
+  else if(P.stage==='grn'){title=P.rows.length+' GRN\'s available against the POs';bar='POs: '+S.poSel.map(function(p){return p.id;}).join(', ');}
+  else{title=P.rows.length+' GRN\'s relevant for this bill';sub='Select GRNs to link to this bill';}
+  var label=(P.stage==='po'&&S.model!==1)?'Next':'Apply';
+  var vb='';
+  if(S.model===3||S.model===4){
+    var src=v.tk.length?v.tk:(P.stage==='grn'?S.poSel:[]);
+    if(src.length){
+      var uq=function(a){return a.filter(function(x,i){return a.indexOf(x)===i;});};
+      var vs=uq(src.map(function(r){return r.vendor;})),bs=uq(src.map(function(r){return r.branch;}));
+      vb='<p class="vb'+((vs.length>1||bs.length>1)?' mix':'')+'"><span>Vendor: <b>'+esc(vs.join(', '))+'</b></span><span>Branch: <b>'+esc(bs.join(', '))+'</b></span></p>';
+    }else vb='<p class="vb">Vendor and branch show once you tick a '+(P.stage==='po'?'PO':'GRN')+'</p>';
+  }
+  var h='<div class="mh"><div class="tt">'+(P.stage==='grn'?'<button class="x" data-act="back" aria-label="Back to POs">'+I.back+'</button>':'')+'<div><h3>'+esc(title)+'</h3>'+vb+(sub?'<p class="sub">'+esc(sub)+'</p>':'')+'</div></div><button class="x" data-act="close" aria-label="Close">'+I.x+'</button></div>';
+  if(bar)h+='<div class="bar">'+esc(bar)+'</div>';
+  h+='<div class="mscroll"><div class="tbl" style="--cols:'+cfg.cols+'"><div class="tr th"><div><button class="cb '+(allOn?'on':mixed?'mixed':'')+'" role="checkbox" aria-checked="'+(allOn?'true':mixed?'mixed':'false')+'" aria-label="Select all" data-act="selall">'+(allOn?I.check:mixed?I.dash:'')+'</button></div>';
+  cfg.defs.forEach(function(d){
+    var cell;
+    if(d.k){var on=P.sort.key===d.k;cell='<button class="sortbtn '+(on?'on':'')+'" data-act="sort" data-k="'+d.k+'" aria-label="Sort by '+d.l.toLowerCase()+'">'+d.l+' '+(on?(P.sort.dir===1?I.up:I.down):I.sort)+'</button>';}
+    else cell=d.l;
+    h+='<div class="'+(d.al||'')+'">'+cell+'</div>';
+  });
+  h+='</div>';
+  rows.forEach(function(r){
+    var on=P.ticked.has(r.id);
+    h+='<div class="tr" role="checkbox" aria-checked="'+on+'" tabindex="0" data-act="tick" data-id="'+r.id+'"><div><span class="cb '+(on?'on':'')+'">'+(on?I.check:'')+'</span></div>';
+    cfg.defs.forEach(function(d){h+='<div class="'+(d.al||'')+'">'+d.c(r)+'</div>';});
+    h+='</div>';
+  });
+  h+='</div></div>';
+  if(S.pickerNote)h+='<p class="note">Showing 25. Narrow by date or code to see others</p>';
+  v.errs.forEach(function(e){h+='<p class="err">'+esc(e)+'</p>';});
+  if(P.stage==='grn')h+=v.missing.length?'<p class="warn-t">'+esc(v.missing.join(', '))+' needs at least 1 GRN</p>':'<p class="muted">Pick at least 1 GRN for each PO</p>';
+  h+='<div class="mf"><span class="muted" style="margin:0">'+n+' selected</span><span class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="pnext" aria-disabled="'+(!v.ok)+'">'+label+'</button></span></div>';
+  return '<div class="modal" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+h+'</div>';
+}
+function buildPending(recs){
+  var lines=[];
+  recs.forEach(function(r){r.lines.forEach(function(l){if(rem(l)>0)lines.push({n:l.n,r:l.r,g:l.g,rem:rem(l),qty:rem(l)});});});
+  var po=[],grn=[];
+  if(S.model===1)po=recs.map(function(r){return r.id;});
+  else{grn=recs.map(function(r){return r.id;});po=S.model===3?[]:S.poSel.map(function(p){return p.id;});}
+  return {recs:recs,lines:lines,t:totals(lines),branch:recs[0].branch,po:po,grn:grn};
+}
+function pnext(){
+  var v=validate();if(!v.ok)return;
+  var P=S.P;
+  if(P.stage==='po'&&S.model!==1){S.P1=P;S.poSel=v.tk.slice().sort(byOld);openPicker('grn');return;}
+  S.pending=buildPending(v.tk.slice().sort(byOld));S.modal='compare';render();
+}
+
+/* ---------- other modals ---------- */
+function compareHTML(){
+  var p=S.pending;
+  return '<div class="modal sm" role="dialog" aria-modal="true" aria-label="Compare before you apply"><div class="mh"><div><h3>Compare before you apply</h3><p class="sub">Overriding replaces all line items and updates the GST with the PO/GRN values.</p></div><button class="x" data-act="close" aria-label="Close">'+I.x+'</button></div>'+
+  cmpTable(p.t,SCAN)+
+  '<div class="mf"><span></span><span class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="override">Override with PO/GRN</button></span></div></div>';
+}
+function cmpTable(a,b){
+  return '<table class="cmp"><thead><tr><th></th><th>PO/GRN info</th><th>Mysa bill scan</th></tr></thead><tbody>'+
+   '<tr><td>Subtotal</td><td>'+fmt(a.sub)+'</td><td>'+fmt(b.sub)+'</td></tr>'+
+   '<tr><td>GST amount</td><td>'+fmt(a.gst)+'</td><td>'+fmt(b.gst)+'</td></tr>'+
+   '<tr><td>Total gross amount</td><td>'+fmt(a.total)+'</td><td>'+fmt(b.total)+'</td></tr></tbody></table>';
+}
+function detailsHTML(){
+  return '<div class="modal sm" role="dialog" aria-modal="true" aria-label="PO/GRN values differ from the scanned bill"><div class="mh"><h3>PO/GRN values differ from the scanned bill</h3><button class="x" data-act="close" aria-label="Close">'+I.x+'</button></div>'+cmpTable(S.applied.t0,SCAN)+'</div>';
+}
+function vendorHTML(){
+  return '<div class="modal sm" role="dialog" aria-modal="true" aria-label="Change vendor"><div class="mh"><h3>Change vendor?</h3><button class="x" data-act="close" aria-label="Close">'+I.x+'</button></div><p class="sub">Changing the vendor resets the PO/GRN and the line items.</p><div class="mf"><span></span><span class="btns"><button class="btn" data-act="close">Keep vendor</button><button class="btn primary" data-act="vendorok">Reset and change</button></span></div></div>';
+}
+function issues(){
+  var out=[],f=flagCount();
+  if(f)out.push(f+(f===1?' line has':' lines have')+' a quantity above what remains');
+  if(S.applied)out.push('Subtotal and GST differ from the scanned values');
+  return out;
+}
+function submitHTML(){
+  return '<div class="modal sm" role="dialog" aria-modal="true" aria-label="Review before submitting"><div class="mh"><h3>Review before submitting</h3><button class="x" data-act="close" aria-label="Close">'+I.x+'</button></div><ul style="margin:12px 0 0;padding-left:18px">'+issues().map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul><div class="mf"><span></span><span class="btns"><button class="btn" data-act="close">Go back</button><button class="btn primary" data-act="submitok">Submit anyway</button></span></div></div>';
+}
+
+/* ---------- main screen ---------- */
+function flagCount(){return S.lines?S.lines.filter(function(l){return l.qty>l.rem;}).length:0;}
+function curTotals(){return S.lines?totals(S.lines):SCAN;}
+function derivedHTML(){
+  var t=curTotals(),f=flagCount(),h='';
+  h+='<div class="totals"><div><span>Subtotal</span><span>'+fmt(t.sub)+'</span></div><div><span>GST amount</span><span>'+fmt(t.gst)+'</span></div><div class="t"><span>Total gross amount</span><span>'+fmt(t.total)+'</span></div></div>';
+  if(f)h+='<div class="banner flagrow">'+I.warn+'<span>'+f+(f===1?' line has':' lines have')+' a quantity above what remains</span></div>';
+  if(S.applied)h+='<div class="banner"><div class="brow"><span>Subtotal and GST are different from the scanned values</span><button class="link" data-act="details">View details</button></div></div>';
+  return h;
+}
+function linesHTML(){
+  var h,i;
+  if(!S.lines){
+    h='<div class="hd"><h2>Bill line items ('+SCAN_LINES.length+')</h2></div><table class="lines"><thead><tr><th class="n">#</th><th>ITEM DETAILS</th><th class="r">QTY</th><th class="r">RATE</th><th class="r">GST %</th><th class="r">AMOUNT</th></tr></thead><tbody>';
+    SCAN_LINES.forEach(function(l,ix){h+='<tr><td class="n">'+(ix+1)+'</td><td>'+l.n+'</td><td class="r">'+l.qty+'</td><td class="r">'+fmt(l.r)+'</td><td class="r">'+l.g+'%</td><td class="r">'+fmt(l.qty*l.r)+'</td></tr>';});
+  }else{
+    h='<div class="hd"><h2>Bill line items ('+S.lines.length+')</h2></div><table class="lines"><thead><tr><th class="n">#</th><th>ITEM DETAILS</th><th class="r">QTY</th><th class="r">RATE</th><th class="r">GST %</th><th class="r">AMOUNT</th></tr></thead><tbody>';
+    for(i=0;i<S.lines.length;i++){var l=S.lines[i],over=l.qty>l.rem;
+      h+='<tr><td class="n">'+(i+1)+'</td><td>'+l.n+'</td><td class="r"><div class="qty"><span id="fs'+i+'">'+(over?flagEl(l):'')+'</span><input id="q'+i+'" type="number" min="0" step="1" value="'+l.qty+'" data-input="qty" data-i="'+i+'" class="'+(over?'over':'')+'" aria-label="Quantity, line '+(i+1)+'"></div></td><td class="r">'+fmt(l.r)+'</td><td class="r">'+l.g+'%</td><td class="r" id="am'+i+'">'+fmt(l.qty*l.r)+'</td></tr>';}
+  }
+  h+='</tbody></table><div id="derived">'+derivedHTML()+'</div>';
+  return h;
+}
+function flagEl(l){return '<span class="flag" tabindex="0" role="img" aria-label="Above remaining '+l.rem+'" data-tip="Above remaining '+l.rem+'">'+I.flag+'</span>';}
+function fieldHTML(label,val,opts){
+  opts=opts||{};
+  return '<div class="f"><span>'+label+'</span><div class="v '+(val?'':'empty')+' '+(opts.ro?'ro':'')+'"><span>'+(val?esc(val):esc(opts.ph||'--'))+'</span>'+(opts.x?'<button class="x" data-act="remove" aria-label="Remove all PO/GRN">'+I.x+'</button>':'')+'</div></div>';
+}
+function sectionHTML(){
+  var m=S.model,a=S.applied,h='';
+  var title=m===3?'GRN details':'PO &amp; GRN';
+  h+='<div class="hd"><h2>'+title+'</h2>'+(!a?'<button class="link" data-act="refetch">Fetch again</button>':'')+'</div>';
+  var noun=m===3?'GRN':'PO';
+  if(m===3||m===4){
+    var dlabel=m===3?'Delivery Date':'PO date',clabel=m===3?'GRN number':'PO number',ph=m===3?'e.g. GRN-2193':'e.g. PO-3003';
+    h+='<div class="grid2"><label class="f"><span>'+dlabel+'</span><input type="date" data-change="date" value="'+esc(S.dateVal)+'"></label>';
+    if(a)h+=fieldHTML(clabel,(m===3?a.grn:a.po).join(', '),{x:true});
+    else h+='<label class="f"><span>'+clabel+'</span><input data-change="code" placeholder="'+ph+'" value="'+esc(S.codeVal)+'" autocomplete="off"></label>';
+    h+='</div>';
+    if(m===4)h+='<div class="grid2" style="margin-top:12px">'+fieldHTML('GRN ID',a?a.grn.join(', '):'',{ro:true})+'</div>';
+    if(S.codeHint)h+='<p class="hint">'+esc(S.codeHint)+'</p>';
+    else if(!a)h+='<p class="hint">One code per bill. For several '+noun+'s, pick a '+dlabel+' and tick them.</p>';
+  }else{
+    h+='<div class="grid2">'+fieldHTML('PO number',a?a.po.join(', '):'',{x:!!a,ph:'PO'});
+    if(m===2)h+=fieldHTML('GRN ID',a?a.grn.join(', '):'',{ro:true});
+    h+='</div>';
+  }
+  if(S.loading)h+='<div class="note-row skel">Fetching '+noun+'s…</div>';
+  else if(a){/* applied */}
+  else if(S.fetched&&S.list.length===0){h+='<div class="note-row"><span>No matching '+noun+'s found</span><button class="link" data-act="refetch">Fetch again</button></div>';}
+  else if(S.fetched){
+    h+='<div class="banner"><div class="brow"><span>There are '+Math.min(S.list.length,25)+' '+noun+'\'s relevant for this bill</span></div><div class="brow2"><label><input type="checkbox" data-change="optout" '+(S.optOut?'checked':'')+'> I don\'t want to apply '+noun+'</label><button class="link" data-act="open">Select &amp; Apply</button></div></div>';
+    if(S.mandatoryErr)h+='<p class="err">Select a '+noun+' or choose "I don\'t want to apply '+noun+'" to continue</p>';
+  }
+  return h;
+}
+function mainHTML(){
+  var vend=[RICH,'Jalaram Enterprises',SAI,FRESH].map(function(v){return '<option '+(v===S.vendor?'selected':'')+'>'+v+'</option>';}).join('');
+  return '<div><div class="card"><div class="hd"><h2>Bill details</h2></div><div class="grid2"><div class="f"><span>Bill number</span><div class="v">GJ/23-24/2870</div></div>'+
+   '<label class="f"><span>Vendor</span><select data-change="vendor">'+vend+'</select></label>'+
+   '<div class="f"><span>Branch</span><div class="v"><span>'+esc(S.branch)+'</span>'+(S.applied?'<span class="hint" style="margin:0">from PO/GRN</span>':'')+'</div></div></div></div>'+
+   '<div class="card">'+sectionHTML()+'</div><div class="card" id="linescard">'+linesHTML()+'</div>'+
+   '<div class="actions"><button class="btn">Reject</button><button class="btn primary" data-act="submit">Submit</button></div></div>';
+}
+function sideHTML(){
+  return '<aside class="side"><div class="card"><h2>Try this</h2><ol>'+TRY[S.model].map(function(t){return '<li>'+t+'</li>';}).join('')+'</ol></div><div class="card"><h2>Rules in play</h2><ul>'+RULES.map(function(t){return '<li>'+t+'</li>';}).join('')+'</ul></div></aside>';
+}
+function topHTML(){
+  var seg=[1,2,3,4].map(function(m){return '<button role="tab" aria-selected="'+(S&&S.model===m)+'" data-act="model" data-m="'+m+'"><b>Model '+m+'</b><span>'+MODELS[m].sub+'</span></button>';}).join('');
+  return '<header class="top"><div class="ttl">PO/GRN multi-select prototype</div><div class="seg" role="tablist" aria-label="Model">'+seg+'</div><span class="grow"></span>'+(S?'<button class="btn ghost" data-act="reset">Reset</button>':'')+'</header>';
+}
+function landingHTML(){
+  return '<section class="landing"><h1>Choose a model to try</h1><p>Each model fetches and selects differently. Pick one to walk through selecting several POs and GRNs on one bill.</p><div class="cards">'+
+  [1,2,3,4].map(function(m){var d=MODELS[m];return '<button class="mcard" data-act="model" data-m="'+m+'"><b>Model '+m+'</b><span class="erp">'+d.erp+'</span><span class="how">'+d.how+'</span><span class="pick">'+d.pick+'</span></button>';}).join('')+'</div></section>';
+}
+function render(){
+  var app=document.getElementById('app'),old=document.querySelector('.mscroll'),st=old?old.scrollTop:0;
+  if(!S){app.innerHTML=topHTML()+landingHTML();return;}
+  var modal='';
+  if(S.modal==='picker')modal=pickerHTML();
+  else if(S.modal==='compare')modal=compareHTML();
+  else if(S.modal==='details')modal=detailsHTML();
+  else if(S.modal==='confirmVendor')modal=vendorHTML();
+  else if(S.modal==='confirmSubmit')modal=submitHTML();
+  app.innerHTML=topHTML()+'<p class="desc">'+MODELS[S.model].desc+'</p><main class="layout">'+mainHTML()+sideHTML()+'</main>'+(modal?'<div class="ov">'+modal+'</div>':'');
+  var sc=document.querySelector('.mscroll');if(sc&&old)sc.scrollTop=st;
+}
+function paintDerived(i){
+  var l=S.lines[i],over=l.qty>l.rem;
+  var am=document.getElementById('am'+i);if(am)am.textContent=fmt(l.qty*l.r);
+  var fs=document.getElementById('fs'+i);if(fs)fs.innerHTML=over?flagEl(l):'';
+  var q=document.getElementById('q'+i);if(q)q.classList.toggle('over',over);
+  var d=document.getElementById('derived');if(d)d.innerHTML=derivedHTML();
+}
+
+/* ---------- actions ---------- */
+function resetBill(){S.applied=null;S.lines=null;S.branch='Headquarters';S.optOut=false;S.mandatoryErr=false;}
+var ACT={
+  model:function(el){fresh(+el.dataset.m);},
+  reset:function(){if(S)fresh(S.model);},
+  open:function(){openPicker(S.model===3?'grn3':'po');},
+  close:function(){S.modal=null;render();},
+  back:function(){S.P=S.P1;S.pickerNote=S.list.length>25;S.modal='picker';render();},
+  tick:function(el){var id=el.dataset.id,t=S.P.ticked;if(t.has(id))t.delete(id);else t.add(id);render();},
+  selall:function(){var P=S.P,all=P.rows.every(function(r){return P.ticked.has(r.id);});if(all)P.ticked.clear();else P.rows.forEach(function(r){P.ticked.add(r.id);});render();},
+  sort:function(el){var s=S.P.sort,k=el.dataset.k;if(s.key===k)s.dir*=-1;else{s.key=k;s.dir=1;}render();},
+  pnext:pnext,
+  override:function(){var p=S.pending;S.lines=p.lines.map(function(l){return {n:l.n,r:l.r,g:l.g,rem:l.rem,qty:l.qty};});S.applied={po:p.po,grn:p.grn,t0:p.t};S.branch=p.branch;S.optOut=false;S.mandatoryErr=false;S.modal=null;render();toast('PO/GRN applied');},
+  details:function(){S.modal='details';render();},
+  remove:function(){resetBill();render();toast('PO/GRN removed');},
+  refetch:function(){if(S.model===3||S.model===4){var g3=S.model===3;if(!S.codeVal.trim()&&!S.dateVal){S.codeHint='Enter a '+(g3?'GRN code':'PO code')+' or pick a '+(g3?'Delivery Date':'PO date')+' first.';render();}else fetchByInput();}else fetchPOs();},
+  vendorok:function(){var v=S.pendingVendor;S.modal=null;resetBill();S.vendor=v;if(S.model===1||S.model===2)fetchPOs();else render();},
+  submit:function(){
+    var need=S.fetched&&S.list.length>0&&!S.applied&&!S.optOut;
+    if(need){S.mandatoryErr=true;render();return;}
+    if(S.applied&&issues().length){S.modal='confirmSubmit';render();return;}
+    toast('Submitted. This is a prototype, nothing is saved.');
+  },
+  submitok:function(){S.modal=null;render();toast('Submitted. This is a prototype, nothing is saved.');}
+};
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');if(!el)return;
+  if(el.getAttribute('aria-disabled')==='true')return;
+  var f=ACT[el.dataset.act];if(f)f(el,e);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&S&&S.modal){S.modal=null;render();return;}
+  if((e.key===' '||e.key==='Enter')&&e.target.matches&&e.target.matches('[data-act="tick"]')){e.preventDefault();e.target.click();}
+});
+document.addEventListener('change',function(e){
+  var el=e.target,a=el.dataset&&el.dataset.change;if(!a||!S)return;
+  if(a==='vendor'){
+    if(S.applied){S.pendingVendor=el.value;S.modal='confirmVendor';render();}
+    else{S.vendor=el.value;if(S.model===1||S.model===2)fetchPOs();else render();}
+  }else if(a==='optout'){S.optOut=el.checked;if(S.optOut)S.mandatoryErr=false;render();}
+  else if(a==='code'){
+    S.codeVal=el.value;
+    if(S.codeVal.indexOf(',')>-1){S.codeHint='Enter one code. For several '+(S.model===3?'GRNs, pick a Delivery Date':'POs, pick a PO date')+' and tick them.';render();return;}
+    S.codeHint='';if(S.codeVal.trim()||S.dateVal)fetchByInput();else render();
+  }else if(a==='date'){S.dateVal=el.value;if(S.dateVal||S.codeVal.trim())fetchByInput();else render();}
+});
+document.addEventListener('input',function(e){
+  var el=e.target;if(!S||!el.dataset||el.dataset.input!=='qty')return;
+  var i=+el.dataset.i,v=parseFloat(el.value);S.lines[i].qty=isNaN(v)||v<0?0:v;paintDerived(i);
+});
+
+render();
+})();
+</script>
+</body>
+</html>
